@@ -22,7 +22,7 @@ Copy file vk2irc.py somewhere on your drive and give it 755 permissions
 
     chmod 755 vk2irc.py
 
-In the home folder of user that would be used to start application create config file and name it .vk2irc Example configuration is located in vk2irc.ini In section [vk_bot], parameter _access_token_ is the token that could be obtained from VK API, details on the URL
+In the home folder of user that would be used to start application create config file and name it .vk2irc Example configuration is located in vk2irc.ini In section _[vk_bot]_, parameter _access_token_ is the token that could be obtained from VK API, details on the URL
 
  https://vk.com/dev/auth_mobile
 
