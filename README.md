@@ -22,17 +22,17 @@ Copy file vk2irc.py somewhere on your drive and give it 755 permissions
 
     chmod 755 vk2irc.py
 
-In the home folder of user that would be used to start application create config file and name it .vk2irc Example configuration is located in vk2irc.ini In section [vk_bot], parameter access_token is the token that could be obtained from VK API, details on the URL
+In the home folder of user that would be used to start application create config file and name it .vk2irc Example configuration is located in vk2irc.ini In section [vk_bot], parameter _access_token_ is the token that could be obtained from VK API, details on the URL
 
  https://vk.com/dev/auth_mobile
 
-Application would need the following access rights (scope parameter) friends,photos,audio,video,messages,offline
+Application would need the following access rights (parameter _scope_ in http request) _friends,photos,audio,video,messages,offline_
 
-To be able to connect to VK multiuser chat room application needs to know it's id. This value could be obtained in response to a following request to VK API (note: the request must be executed from behalf of user that owns VK application and who's name would be used to deliver IRC messages to VK multiuser dialog)
+To be able to connect to VK multiuser chat room application needs to know it's id (_chat_id_). This value could be obtained in response to a following request to VK API (note: the request must be executed from behalf of user that owns VK application and who's name would be used to deliver IRC messages to VK multiuser dialog)
 
  https://vk.com/dev/messages.getDialogs
 
-Section [irc_bot] contains IRC server settings. Details under this URL
+Section _[irc_bot]_ contains IRC server settings. Details under this URL
 
  https://pypi.python.org/pypi/irc
 
@@ -68,17 +68,17 @@ vk2irc
 
     chmod 755 vk2irc.py
 
-В домашней папке пользователя из под котого вы будете запускать приложение создайте конфигурационный файл .vk2irc Пример конфигурации можно посмотреть в файле vk2irc.ini В секции [vk_bot] необходимо указать access_token, подробнее о получении access_token можно прочитать по ссылке
+В домашней папке пользователя из под котого вы будете запускать приложение создайте конфигурационный файл .vk2irc Пример конфигурации можно посмотреть в файле vk2irc.ini В секции _[vk_bot]_ необходимо указать _access_token_, подробнее о получении _access_token_ можно прочитать по ссылке
 
  https://vk.com/dev/auth_mobile
 
-Для работы приложению необходимы следующие права доступа (параметр scope) friends,photos,audio,video,messages,offline
+Для работы приложению необходимы следующие права доступа (параметр _scope_) _friends,photos,audio,video,messages,offline_
 
-Для подключения к многопользовательскому диалогу ВКонтакте необходимо указать его идентификатор, это значение можно получить сделав следующий вызов VK API из под пользователя под которым будет зарегистрировано приложение и от лица которого планируется вести беседу в многопользовательском диалоге ВКонтакте
+Для подключения к многопользовательскому диалогу ВКонтакте необходимо указать его идентификатор (_chat_id_), это значение можно получить сделав следующий вызов VK API из под пользователя под которым будет зарегистрировано приложение и от лица которого планируется вести беседу в многопользовательском диалоге ВКонтакте
 
  https://vk.com/dev/messages.getDialogs
  
-В секции [irc_bot] указываются настройки для подключения к IRC серверу. Подробнее см. 
+В секции _[irc_bot]_ указываются настройки для подключения к IRC серверу. Подробнее см. 
 
  https://pypi.python.org/pypi/irc
  
