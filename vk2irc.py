@@ -34,7 +34,7 @@ class IrcBot(irc.bot.SingleServerIRCBot):
     def on_pubmsg(self, c, e):
         if self.deliver_to_irc == True:
             vk_bot.invoke_vk('messages.send', {
-                'chat_id' : self.chat_id,
+                'chat_id' : vk_bot.chat_id,
                 'message' : ("%s: %s" % (e.source.nick, e.arguments[0])).encode('utf-8')})
 
     def send(self, msg):
