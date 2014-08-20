@@ -13,6 +13,7 @@ import os
 import ConfigParser
 import logging
 from urllib2 import HTTPError, URLError
+import HTMLParser
 
 irc_bot = None 
 vk_bot = None
@@ -59,11 +60,11 @@ class VkBot(threading.Thread):
         request = urllib2.Request(url, data)
         response = urllib2.urlopen(request)
         resJson = json.loads(response.read())
-        #if resJson["error"] is not None:
-        #    logging.error("Response to VK returned error: %s", resJson['error']['error_msg'])
-        #    logging.info("result=%s", resJson);
-        #    return ""
-        #logging.info("result=%s", resJson);
+
+        if resJson.get('error') is not None:
+            logging.error("Response to VK returned error: %s", resJson['error']['error_msg'])
+            logging.info("result=%s", resJson);
+            return ""
         return resJson
 
     def clear_url(self, url):
@@ -129,12 +130,27 @@ class VkBot(threading.Thread):
                     return
                 if user_id in self.users:
                     user_name = self.users[user_id]
-                    for line in textwrap.wrap(update[6], 200):
-                        irc_bot.send("%s: %s" % (user_name, line))
+                    
+                    #remove/replace special symbols
+                    msg = HTMLParser.HTMLParser().unescape(update[6])
+                    msg = msg.replace("<br>", "<br />")
+                    name_sent = False
+                    for paragraph in msg.split("<br />"):
+                        for line in textwrap.wrap(paragraph, 200):
+                            if name_sent:
+                                irc_bot.send("%s" % line)
+                            else:
+                                irc_bot.send("%s: %s" % (user_name, line))
+                                name_sent = True
                     if 'attachments' in details:
                         for attach in details['attachments']:
                             for key, value in attach.items():
-                                irc_bot.send("%s: [%s] %s" % (user_name, key, value))
+                                if name_sent:
+                                    irc_bot.send("[%s] %s" % (key, value))
+                                else:
+                                    irc_bot.send("%s: [%s] %s" % (user_name, key, value))
+                                    name_sent = True
+
 
     def get_long_poll_server(self, ts):
         response = self.invoke_vk('messages.getLongPollServer')
