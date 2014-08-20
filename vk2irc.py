@@ -16,6 +16,7 @@ from urllib2 import HTTPError, URLError
 
 irc_bot = None 
 vk_bot = None
+vk_api = "5.24"
 
 class IrcBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667, server_pass = '', deliver_to_irc=True):
@@ -49,14 +50,21 @@ class VkBot(threading.Thread):
         logging.info("Initializing vk_bot, parameters: access_token = *****, chat_id = %s, deliver_to_vk = %s" % (chat_id, deliver_to_vk))
 
     def invoke_vk(self, method, params=dict()):
+        #logging.info("invoke_vk. method=%s, params=%s", method, params)
         time.sleep(0.4)
         url = 'https://api.vk.com/method/%s' % method
-        constparams = {'v' : '5.23',
+        constparams = {'v' : vk_api,
                        'access_token' : self.access_token}
         data = urllib.urlencode(dict(constparams.items() + params.items()))
         request = urllib2.Request(url, data)
         response = urllib2.urlopen(request)
-        return json.loads(response.read())
+        resJson = json.loads(response.read())
+        #if resJson["error"] is not None:
+        #    logging.error("Response to VK returned error: %s", resJson['error']['error_msg'])
+        #    logging.info("result=%s", resJson);
+        #    return ""
+        #logging.info("result=%s", resJson);
+        return resJson
 
     def clear_url(self, url):
         result = url
@@ -91,7 +99,7 @@ class VkBot(threading.Thread):
                 'attachments' : attachments}
 
     def get_user_names(self, user_ids):
-        response = self.invoke_vk('users.get', {'user_ids' : user_ids, 'name_case' : 'Nom'})
+        response = self.invoke_vk('users.get', {'user_ids' : ','.join(str(x) for x in user_ids), 'name_case' : 'Nom'}) #
         result = dict()
         for user in response['response']:
             result[user['id']] = "%s %s" % (user['first_name'], user['last_name'])
@@ -101,15 +109,24 @@ class VkBot(threading.Thread):
         response = self.invoke_vk('messages.getChat' , {'chat_id' : self.chat_id})
         return self.get_user_names(response['response']['users']) if 'users' in response['response'] else None
 
+    def is_app_user(self, user_id):
+        if self.app_user_id is None:
+            response = self.invoke_vk('users.isAppUser' , {'user_id' : user_id})
+            if int(response['response']) == 1:
+                self.app_user_id = user_id
+        return user_id == self.app_user_id
+
     def process_updates(self, updates):
         if len(updates) == 0:
             return
         for update in updates:
-            if update[0] == 4 and int(update[2]) & 0b10 == False:
+            if update[0] == 4 and (int(update[2]) & 0b10 == False):
                 details = self.get_message_details(update[1])
                 if details is None:
                     return
                 user_id = details['user_id']
+                if self.is_app_user(user_id):
+                    return
                 if user_id in self.users:
                     user_name = self.users[user_id]
                     for line in textwrap.wrap(update[6], 200):
@@ -129,6 +146,7 @@ class VkBot(threading.Thread):
     def run(self):
         long_poll_server = None
         self.users = None
+        self.app_user_id = None
         while True:
             if self.users is None:
                 try:
@@ -173,7 +191,7 @@ class VkBot(threading.Thread):
                     self.users = None
 
 def main():
-    global irc_bot, vk_bot
+    global irc_bot, vk_bot, vk_api
     logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
     config = ConfigParser.SafeConfigParser()
     config_location = "%s/.vk2irc" % os.environ['HOME'] if (len(sys.argv) == 1) else sys.argv[1]

@@ -52,3 +52,5 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+start_vk2irc.cmd
+*.bak
