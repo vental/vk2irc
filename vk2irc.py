@@ -18,6 +18,7 @@ import HTMLParser
 irc_bot = None 
 vk_bot = None
 vk_api = "5.24"
+irc_echo_sym = '&'
 
 class IrcBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667, server_pass = '', deliver_to_irc=True):
@@ -34,7 +35,7 @@ class IrcBot(irc.bot.SingleServerIRCBot):
         c.join(self.channel)
 
     def on_pubmsg(self, c, e):
-        if self.deliver_to_irc == True:
+        if self.deliver_to_irc == True and e.arguments[0][0] != irc_echo_sym:
             vk_bot.invoke_vk('messages.send', {
                 'chat_id' : vk_bot.chat_id,
                 'message' : ("%s: %s" % (e.source.nick, e.arguments[0])).encode('utf-8')})
