@@ -25,6 +25,7 @@ class IrcBot(irc.bot.SingleServerIRCBot):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port, server_pass)], nickname, nickname)
         self.channel = channel
         self.deliver_to_irc = deliver_to_irc
+        self.last_message_from = ""
         logging.info("Initializing irc_bot, parameters: channel = %s, nickname = %s, server = %s, port = %s, deliver_to_irc = %s" % 
                      (channel, nickname, server, str(port), deliver_to_irc))
 
@@ -36,9 +37,15 @@ class IrcBot(irc.bot.SingleServerIRCBot):
 
     def on_pubmsg(self, c, e):
         if self.deliver_to_irc == True and e.arguments[0][0] != irc_echo_sym:
+            if vk_bot.is_last_message_vk == True or self.last_message_from != e.source.nick:
+                message = ("%s: %s" % (e.source.nick, e.arguments[0])).encode('utf-8')
+                vk_bot.is_last_message_vk = False
+                self.last_message_from = e.source.nick
+            else:
+                message = e.arguments[0].encode('utf-8')
             vk_bot.invoke_vk('messages.send', {
                 'chat_id' : vk_bot.chat_id,
-                'message' : ("%s: %s" % (e.source.nick, e.arguments[0])).encode('utf-8')})
+                'message' : message})
 
     def send(self, msg):
         self.connection.privmsg(self.channel, msg)
@@ -49,6 +56,8 @@ class VkBot(threading.Thread):
         self.access_token = access_token
         self.chat_id = chat_id
         self.deliver_to_vk = deliver_to_vk
+        self.is_last_message_vk = True
+        self.last_message_from = ""
         logging.info("Initializing vk_bot, parameters: access_token = *****, chat_id = %s, deliver_to_vk = %s" % (chat_id, deliver_to_vk))
 
     def invoke_vk(self, method, params=dict()):
@@ -131,26 +140,23 @@ class VkBot(threading.Thread):
                     return
                 if user_id in self.users:
                     user_name = self.users[user_id]
-                    
                     #remove/replace special symbols
                     msg = HTMLParser.HTMLParser().unescape(update[6])
                     msg = msg.replace("<br>", "<br />")
-                    name_sent = False
+                    name_sent = self.is_last_message_vk == True and self.last_message_from == user_name
+                    self.is_last_message_vk = True
+                    self.last_message_from = user_name
                     for paragraph in msg.split("<br />"):
                         for line in textwrap.wrap(paragraph, 200):
-                            if name_sent:
-                                irc_bot.send("%s" % line)
-                            else:
-                                irc_bot.send("%s: %s" % (user_name, line))
-                                name_sent = True
+                            if name_sent == False: line = "%s: %s" % (user_name, line) 
+                            name_sent = True
+                            irc_bot.send("%s" % line)
                     if 'attachments' in details:
                         for attach in details['attachments']:
                             for key, value in attach.items():
-                                if name_sent:
-                                    irc_bot.send("[%s] %s" % (key, value))
-                                else:
-                                    irc_bot.send("%s: [%s] %s" % (user_name, key, value))
-                                    name_sent = True
+                                line = "[%s] %s" % (key, value) if name_sent else "%s: [%s] %s" % (user_name, key, value)
+                                name_sent = True
+                                irc_bot.send("%s" % line)
 
 
     def get_long_poll_server(self, ts):
@@ -208,7 +214,7 @@ class VkBot(threading.Thread):
                     self.users = None
 
 def main():
-    global irc_bot, vk_bot, vk_api
+    global irc_bot, vk_bot, vk_api, irc_echo_sym
     logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
     config = ConfigParser.SafeConfigParser()
     config_location = "%s/.vk2irc" % os.environ['HOME'] if (len(sys.argv) == 1) else sys.argv[1]
